@@ -28,15 +28,19 @@ fn main() {
     match starrail_cn {
         Ok(entry) => {
             process_graphics_setting(&entry);
+            return;
         }
         Err(e) => match e.kind() {
-            ErrorKind::NotFound => show_message_dialog(
-                "未检测到国服注册表数据, 请尝试修改游戏图形设置并关闭!",
-                MessageType::Error,
-                true,
-            ),
+            ErrorKind::NotFound => {
+                show_message_dialog(
+                    "未检测到国服注册表数据, 请尝试修改游戏图形设置并关闭!",
+                    MessageType::Error,
+                    true,
+                );
+            }
             ErrorKind::PermissionDenied => {
-                show_message_dialog("请使用管理员权限运行!", MessageType::Error, true)
+                show_message_dialog("请使用管理员权限运行!", MessageType::Error, true);
+                return;
             }
             _ => {
                 panic!("{:?}", e)
