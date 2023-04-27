@@ -20,7 +20,7 @@ fn main() {
     let hkusr = RegKey::predef(HKEY_CURRENT_USER);
 
     let cn_path = Path::new("Software").join("miHoYo").join("崩坏：星穹铁道");
-    //let global_path = Path::new("Software").join("Cognosphere").join("Star Rail");
+    let global_path = Path::new("Software").join("Cognosphere").join("Star Rail");
 
     let starrail_cn = hkusr.open_subkey_with_flags(cn_path, KEY_ALL_ACCESS);
     let starrail_en = hkusr.open_subkey(global_path);
