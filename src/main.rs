@@ -1,6 +1,7 @@
 use std::io::{stdin, ErrorKind};
 use std::panic;
 use std::path::Path;
+use std::process::exit;
 use std::str::from_utf8;
 
 use native_dialog::{MessageDialog, MessageType};
@@ -106,14 +107,14 @@ fn process_graphics_setting(entry: &RegKey) {
     }
 }
 
-fn input_fps() -> usize {
+fn input_fps() -> u32 {
     println!("请输入欲修改的最高帧数 (最高 120fps)");
     let mut input = String::new();
     stdin().read_line(&mut input).expect("读入帧数失败");
-    if let Ok(r) = input.parse() {
+    if let Ok(r) = input.trim().parse() {
         r
     } else {
-        println!("输入了不合法的数字");
+        println!("输入了不合法的帧数: [{}]", input);
         0
     }
 }
@@ -132,8 +133,6 @@ fn parse_setting_json(rv: &RegValue) -> Option<Value> {
     match result {
         Ok(r) => Some(r),
         Err(e) => {
-            println!("Raw Data: {:?}", rv.bytes);
-            println!("Stringify: {:?}", str);
             eprintln!("{:?}", e);
             show_message_dialog("解析视频配置失败!", MessageType::Error, true);
             None
@@ -152,6 +151,7 @@ fn modify_registry(entry: &RegKey, k: String, rv: &RegValue) {
     match entry.set_raw_value(k, rv) {
         Ok(_) => {
             show_message_dialog("修改成功!", MessageType::Info, false);
+            exit(0);
         }
         Err(e) => {
             eprintln!("{:?}", e);
