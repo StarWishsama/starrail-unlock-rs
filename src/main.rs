@@ -74,12 +74,16 @@ fn process_graphics_setting(entry: &RegKey) {
             .get_mut("FPS")
             .expect("Unable to deserialize game config");
 
-        if check_config_fps(mut_set) {
+        check_config_fps(mut_set);
+
+        let target_fps = input_fps();
+
+        if !(30..=120).contains(&target_fps) {
+            show_message_dialog("请输入合法的帧数 (30-120)!", MessageType::Warning, true);
             return;
         }
 
-        // TODO: custom target fps
-        *mut_set = Value::Number(Number::from(120));
+        *mut_set = Value::Number(Number::from(target_fps));
 
         let mut v_json = String::into_bytes(
             serde_json::to_string(&graphics_setting).expect("Unable to deserialize game config"),
@@ -99,6 +103,18 @@ fn process_graphics_setting(entry: &RegKey) {
             MessageType::Error,
             true,
         )
+    }
+}
+
+fn input_fps() -> usize {
+    println!("请输入欲修改的最高帧数 (最高 120fps)");
+    let mut input = String::new();
+    stdin().read_line(&mut input).expect("读入帧数失败");
+    if let Ok(r) = input.parse() {
+        r
+    } else {
+        println!("输入了不合法的数字");
+        0
     }
 }
 
@@ -157,21 +173,12 @@ fn modify_registry(entry: &RegKey, k: String, rv: &RegValue) {
     }
 }
 
-fn check_config_fps(v: &Value) -> bool {
-    return if let Some(fps_num) = v.as_i64() {
+fn check_config_fps(v: &Value) {
+    if let Some(fps_num) = v.as_i64() {
         if fps_num > 60 {
-            show_message_dialog(
-                format!("你的游戏帧数已被修改过 (当前为 {:?} fps)", fps_num).as_str(),
-                MessageType::Error,
-                false,
-            );
-            true
-        } else {
-            false
+            println!("你的游戏帧数已被修改过 (当前为 {:?} fps).", fps_num)
         }
-    } else {
-        false
-    };
+    }
 }
 
 fn show_message_dialog(content: &str, msg_type: MessageType, show_alert: bool) {
