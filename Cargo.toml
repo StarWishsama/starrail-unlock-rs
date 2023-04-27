@@ -1,0 +1,11 @@
+[package]
+name = "starrail-unlock-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+native-dialog = "0.6.3"
+serde_json = "1.0.96"
+winreg = "0.50.0"
