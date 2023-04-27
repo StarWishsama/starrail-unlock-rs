@@ -23,7 +23,7 @@ fn main() {
     //let global_path = Path::new("Software").join("Cognosphere").join("Star Rail");
 
     let starrail_cn = hkusr.open_subkey_with_flags(cn_path, KEY_ALL_ACCESS);
-    //let starrail_en = hkusr.open_subkey(global_path);
+    let starrail_en = hkusr.open_subkey(global_path);
 
     match starrail_cn {
         Ok(entry) => {
@@ -32,6 +32,25 @@ fn main() {
         Err(e) => match e.kind() {
             ErrorKind::NotFound => show_message_dialog(
                 "未检测到国服注册表数据, 请尝试修改游戏图形设置并关闭!",
+                MessageType::Error,
+                true,
+            ),
+            ErrorKind::PermissionDenied => {
+                show_message_dialog("请使用管理员权限运行!", MessageType::Error, true)
+            }
+            _ => {
+                panic!("{:?}", e)
+            }
+        },
+    }
+
+    match starrail_en {
+        Ok(entry) => {
+            process_graphics_setting(&entry);
+        }
+        Err(e) => match e.kind() {
+            ErrorKind::NotFound => show_message_dialog(
+                "未检测到国际服注册表数据, 请尝试修改游戏图形设置并关闭!",
                 MessageType::Error,
                 true,
             ),
@@ -150,7 +169,7 @@ fn find_registry_kv(entry: &RegKey) -> Option<(String, RegValue)> {
 fn modify_registry(entry: &RegKey, k: String, rv: &RegValue) {
     match entry.set_raw_value(k, rv) {
         Ok(_) => {
-            show_message_dialog("修改成功!", MessageType::Info, false);
+            show_message_dialog("修改成功! 如未生效请尝试重启游戏", MessageType::Info, false);
             exit(0);
         }
         Err(e) => {
