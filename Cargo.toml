@@ -1,10 +1,9 @@
 [package]
 name = "starrail-unlock-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [profile.release]
-panic = "abort"
 opt-level = 3
 strip = true
 lto = "thin"

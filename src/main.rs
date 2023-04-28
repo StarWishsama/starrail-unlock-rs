@@ -23,7 +23,7 @@ fn main() {
     let global_path = Path::new("Software").join("Cognosphere").join("Star Rail");
 
     let starrail_cn = hkusr.open_subkey_with_flags(cn_path, KEY_ALL_ACCESS);
-    let starrail_en = hkusr.open_subkey(global_path);
+    let starrail_en = hkusr.open_subkey_with_flags(global_path, KEY_ALL_ACCESS);
 
     match starrail_cn {
         Ok(entry) => {
