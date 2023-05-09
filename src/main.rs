@@ -17,7 +17,6 @@ use crate::config::setting::GraphicsSetting;
 use crate::validator::RangeValidate;
 
 mod config;
-mod selector;
 mod validator;
 
 fn main() {
@@ -30,7 +29,7 @@ fn main() {
         suspend()
     }));
 
-    let config_selector = Select::new("请选择要修改的设置", selector::get_graphics_settings())
+    let config_selector = Select::new("请选择要修改的设置", GraphicsSetting::get_vec())
         .with_help_message("按 ↑↓ 切换选项, 按 Enter 键选择, 输入文本筛选选项.");
 
     let hkusr = RegKey::predef(HKEY_CURRENT_USER);

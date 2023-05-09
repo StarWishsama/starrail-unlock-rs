@@ -1,6 +1,6 @@
-use strum::{Display, EnumString, IntoStaticStr};
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 
-#[derive(Debug, Display, EnumString, IntoStaticStr)]
+#[derive(Debug, Display, EnumString, IntoStaticStr, EnumIter)]
 pub enum GraphicsSetting {
     /// 帧率 (30~120)
     #[strum(serialize = "FPS")]
@@ -35,5 +35,13 @@ impl GraphicsSetting {
             GraphicsSetting::BloomQuality => "BloomQuality",
             GraphicsSetting::AAMode => "AAMode",
         }
+    }
+
+    pub fn get_vec() -> Vec<&'static str> {
+        let mut v = Vec::new();
+        for gs in GraphicsSetting::iter() {
+            v.push(gs.as_static_str())
+        }
+        v
     }
 }

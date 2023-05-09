@@ -1,5 +1,5 @@
 use std::convert::Into;
-use std::ops::{RangeBounds, RangeInclusive};
+use std::ops::RangeBounds;
 
 use inquire::validator::Validation;
 use inquire::CustomUserError;
