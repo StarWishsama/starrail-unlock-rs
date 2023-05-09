@@ -16,3 +16,4 @@ serde_json = { version = "1.0.96", features = ["preserve_order"] }
 winreg = "0.50.0"
 inquire = "0.6.1"
 strum = { version = "0.24", features = ["derive"] }
+lazy_static = "1.4.0"
