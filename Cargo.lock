@@ -375,7 +375,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "starrail-unlock-rs"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "inquire",
  "log",
