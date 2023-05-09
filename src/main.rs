@@ -2,11 +2,10 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::fmt::format;
 use std::io::{stdin, ErrorKind};
 use std::panic;
 use std::path::Path;
-use std::str::{from_utf8, FromStr};
+use std::str::from_utf8;
 
 use inquire::{Select, Text};
 use log::LevelFilter;
