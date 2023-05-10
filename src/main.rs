@@ -10,6 +10,7 @@ use std::str::from_utf8;
 use inquire::{Select, Text};
 use log::LevelFilter;
 use serde_json::{Number, Value};
+use strum::EnumProperty;
 use winreg::enums::{RegType, HKEY_CURRENT_USER, KEY_ALL_ACCESS};
 use winreg::{RegKey, RegValue};
 
@@ -50,7 +51,7 @@ fn main() {
                     process_graphics_setting(&entry, key);
                 }
                 Err(e) => {
-                    warn!("无法检测你的选项: {e}");
+                    warn!("无法识别你的选项: {e}");
                 }
             }
 
@@ -98,11 +99,6 @@ fn main() {
     suspend()
 }
 
-fn suspend() {
-    info!("按任意键关闭");
-    stdin().read_line(&mut String::new()).unwrap();
-}
-
 fn process_graphics_setting(entry: &RegKey, key: &str) {
     let r = find_registry_entry(entry);
 
@@ -129,11 +125,10 @@ fn process_graphics_setting(entry: &RegKey, key: &str) {
     let select_tips = format!("请输入 {} 欲修改的值:", key);
 
     let mut select_receiver: Option<Select<&str>> = None;
-
     let mut input_receiver = Text::new(select_tips.as_str());
 
     let key = GraphicsSetting::find_by_display(key).unwrap();
-    let key_str = key.as_static_str();
+    let message = &format!("请选择{}", key.get_str("display").unwrap());
 
     match key {
         GraphicsSetting::Fps => {
@@ -143,49 +138,29 @@ fn process_graphics_setting(entry: &RegKey, key: &str) {
             select_receiver = Some(Select::new("是否启用垂直同步?", vec!["true", "false"]));
         }
         GraphicsSetting::RenderScale => {
-            select_receiver = Some(Select::new(
-                "请选择渲染精度",
-                selector::render_scale_selector(),
-            ));
+            select_receiver = Some(Select::new(message, selector::render_scale_selector()));
         }
-        // Unchecked region start
         GraphicsSetting::ResolutionQuality => {
-            select_receiver = Some(Select::new(
-                "请选择场景细节",
-                selector::generate_selector(1, 5),
-            ));
+            select_receiver = Some(Select::new(message, selector::generate_selector(1, 5)));
         }
         GraphicsSetting::ShadowQuality => {
-            select_receiver = Some(Select::new("请选择阴影质量", selector::shadow_selector()));
+            select_receiver = Some(Select::new(message, selector::shadow_selector()));
         }
         GraphicsSetting::LightQuality => {
-            select_receiver = Some(Select::new(
-                "请选择光照质量",
-                selector::generate_selector(1, 5),
-            ));
+            select_receiver = Some(Select::new(message, selector::generate_selector(1, 5)));
         }
-        // Unchecked region end
         GraphicsSetting::CharacterQuality => {
-            select_receiver = Some(Select::new(
-                "请选择角色质量",
-                selector::generate_selector(2, 4),
-            ));
+            select_receiver = Some(Select::new(message, selector::generate_selector(2, 4)));
         }
         GraphicsSetting::ReflectionQuality => {
-            select_receiver = Some(Select::new(
-                "请选择反射质量",
-                selector::generate_selector(1, 5),
-            ));
+            select_receiver = Some(Select::new(message, selector::generate_selector(1, 5)));
         }
         GraphicsSetting::BloomQuality => {
-            select_receiver = Some(Select::new(
-                "请选择泛光效果",
-                selector::generate_selector(0, 5),
-            ));
+            select_receiver = Some(Select::new(message, selector::generate_selector(0, 5)));
         }
         GraphicsSetting::AAMode => {
             select_receiver = Some(Select::new(
-                "请选择抗锯齿模式",
+                message,
                 selector::aa_mode_selector().keys().cloned().collect(),
             ));
         }
@@ -193,46 +168,8 @@ fn process_graphics_setting(entry: &RegKey, key: &str) {
 
     if let Some(sr) = select_receiver {
         match sr.with_help_message(DEFAULT_HELP_MSG).prompt() {
-            Ok(result) => {
-                if graphics_setting.is_object() && graphics_setting.get(key_str).is_some() {
-                    let entry = graphics_setting
-                        .get_mut(key.to_string())
-                        .unwrap_or_else(|| panic!("Unable to get game config at key: {}", key));
-
-                    match key {
-                        GraphicsSetting::EnableVSync => {
-                            *entry = Value::Bool(result.parse().unwrap())
-                        }
-                        GraphicsSetting::RenderScale => {
-                            *entry = Value::Number(result.parse().unwrap())
-                        }
-                        GraphicsSetting::AAMode => {
-                            let v = selector::aa_mode_selector();
-                            *entry = Value::Number(Number::from(v[result]))
-                        }
-                        _ => {
-                            *entry = Value::Number(Number::from(
-                                selector::get_num_by_option_name(result).unwrap(),
-                            ))
-                        }
-                    }
-                } else {
-                    warn!("Unable to deserialize game config")
-                }
-
-                let mut raw_json = String::into_bytes(
-                    serde_json::to_string(&graphics_setting)
-                        .expect("Unable to serialize game config"),
-                );
-
-                raw_json.push(0);
-
-                let rv = &RegValue {
-                    bytes: raw_json,
-                    vtype: RegType::REG_BINARY,
-                };
-
-                modify_registry(entry, k, rv);
+            Ok(input) => {
+                write_graphics_setting(entry, k.as_str(), &mut graphics_setting, key, input);
             }
 
             Err(e) => {
@@ -241,44 +178,59 @@ fn process_graphics_setting(entry: &RegKey, key: &str) {
         }
     } else {
         match input_receiver.prompt() {
-            Ok(value) => {
-                if graphics_setting.is_object() && graphics_setting.get(key_str).is_some() {
-                    let entry = graphics_setting
-                        .get_mut(key.to_string())
-                        .expect("Unable to deserialize game config");
-
-                    match key {
-                        GraphicsSetting::EnableVSync => {
-                            *entry = Value::Bool(value.parse().unwrap())
-                        }
-                        GraphicsSetting::RenderScale => {
-                            *entry = Value::Number(value.parse().unwrap())
-                        }
-                        _ => *entry = Value::String(value.parse().unwrap()),
-                    }
-                } else {
-                    warn!("Unable to deserialize game config")
-                }
-
-                let mut raw_json = String::into_bytes(
-                    serde_json::to_string(&graphics_setting)
-                        .expect("Unable to deserialize game config"),
+            Ok(input) => {
+                write_graphics_setting(
+                    entry,
+                    k.as_str(),
+                    &mut graphics_setting,
+                    key,
+                    input.as_str(),
                 );
-
-                raw_json.push(0);
-
-                let rv = &RegValue {
-                    bytes: raw_json,
-                    vtype: RegType::REG_BINARY,
-                };
-
-                modify_registry(entry, k, rv);
             }
             Err(e) => {
                 warn!("输入的值有误! {msg}", msg = e)
             }
         }
     }
+}
+
+fn write_graphics_setting(
+    reg_entry: &RegKey,
+    reg_key: &str,
+    entry: &mut Value,
+    key: GraphicsSetting,
+    value: &str,
+) {
+    let entry = entry
+        .get_mut(key.to_string())
+        .expect("Unable to deserialize game config");
+
+    match key {
+        GraphicsSetting::EnableVSync => *entry = Value::Bool(value.parse().unwrap()),
+        GraphicsSetting::RenderScale => *entry = Value::Number(value.parse().unwrap()),
+        GraphicsSetting::AAMode => {
+            let v = selector::aa_mode_selector();
+            *entry = Value::Number(Number::from(v[value]))
+        }
+        _ => {
+            *entry = Value::Number(Number::from(
+                selector::get_num_by_option_name(value).unwrap(),
+            ))
+        }
+    }
+
+    let mut raw_json = String::into_bytes(
+        serde_json::to_string(&value).expect("Unable to deserialize game config"),
+    );
+
+    raw_json.push(0);
+
+    let rv = &RegValue {
+        bytes: raw_json,
+        vtype: RegType::REG_BINARY,
+    };
+
+    modify_registry(reg_entry, reg_key, rv);
 }
 
 fn parse_setting_json(rv: &RegValue) -> Option<Value> {
@@ -308,7 +260,7 @@ fn find_registry_entry(entry: &RegKey) -> Option<(String, RegValue)> {
         .find(|entry| entry.0.starts_with("GraphicsSettings_Model"))
 }
 
-fn modify_registry(entry: &RegKey, k: String, rv: &RegValue) {
+fn modify_registry(entry: &RegKey, k: &str, rv: &RegValue) {
     match entry.set_raw_value(k, rv) {
         Ok(_) => {
             info!("修改成功! 如未生效请尝试重启游戏");
@@ -325,4 +277,9 @@ fn modify_registry(entry: &RegKey, k: String, rv: &RegValue) {
             }
         }
     }
+}
+
+fn suspend() {
+    info!("按任意键关闭");
+    stdin().read_line(&mut String::new()).unwrap();
 }
