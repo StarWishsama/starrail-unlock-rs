@@ -1,6 +1,8 @@
 use strum::{Display, EnumIter, EnumProperty, EnumString, IntoEnumIterator, IntoStaticStr};
 
-#[derive(Debug, Display, EnumString, EnumProperty, IntoStaticStr, EnumIter)]
+#[derive(
+    Debug, Display, EnumString, EnumProperty, IntoStaticStr, EnumIter, PartialEq, Clone, Copy,
+)]
 pub enum GraphicsSetting {
     /// 帧率 (30~120)
     #[strum(serialize = "FPS", props(display = "帧率"))]
