@@ -2,12 +2,14 @@
 extern crate log;
 extern crate pretty_env_logger;
 
+use std::any::Any;
 use std::io::{stdin, ErrorKind};
 use std::panic;
 use std::path::Path;
+use std::process::exit;
 use std::str::from_utf8;
 
-use inquire::{Select, Text};
+use inquire::{InquireError, Select, Text};
 use log::LevelFilter;
 use serde_json::Value;
 use strum::EnumProperty;
@@ -53,12 +55,13 @@ fn main_menu() {
 
     let config_selector = config_selector.prompt();
     match config_selector {
-        Ok(key) => {
-            process_graphics_setting(&setting_entry.unwrap(), key);
-        }
+        Ok(key) => process_graphics_setting(&setting_entry.unwrap(), key),
         Err(e) => {
-            warn!("无法解析你的选择: {e}");
-            suspend()
+            if e.type_id() == InquireError::OperationCanceled.type_id() {
+                exit(0)
+            } else {
+                warn!("无法解析你的选择: {e}")
+            }
         }
     }
 }
@@ -76,10 +79,10 @@ fn find_setting_entry() -> Option<RegKey> {
         Ok(entry) => return Some(entry),
         Err(e) => match e.kind() {
             ErrorKind::NotFound => {
-                warn!("未检测到国服配置, 尝试寻找国际服配置...");
+                warn!("未检测到国服配置, 尝试寻找国际服配置...")
             }
             ErrorKind::PermissionDenied => {
-                warn!("请使用管理员权限运行!");
+                warn!("请使用管理员权限运行!")
             }
             _ => {
                 panic!("{:?}", e)
@@ -92,10 +95,10 @@ fn find_setting_entry() -> Option<RegKey> {
         Err(e) => {
             match e.kind() {
                 ErrorKind::NotFound => {
-                    warn!("未检测到国际服配置!");
+                    warn!("未检测到国际服配置!")
                 }
                 ErrorKind::PermissionDenied => {
-                    warn!("请使用管理员权限运行!");
+                    warn!("请使用管理员权限运行!")
                 }
                 _ => {
                     panic!("{:?}", e)
@@ -108,14 +111,14 @@ fn find_setting_entry() -> Option<RegKey> {
 }
 
 fn process_graphics_setting(entry: &RegKey, key: &str) {
-    let r = find_registry_entry(entry);
+    let setting = find_registry_entry(entry);
 
-    if r.is_none() {
+    if setting.is_none() {
         warn!("未检测到图形配置文件, 请尝试修改游戏图形设置并退出设置.");
         return;
     }
 
-    let (k, v) = r.unwrap();
+    let (k, v) = setting.unwrap();
 
     let graphics_setting = parse_setting_json(&v);
 

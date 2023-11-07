@@ -10,28 +10,28 @@ pub(crate) fn write_graphics_setting(
     reg_key: &str,
     entry: &mut Value,
     key: GraphicsSetting,
-    value: &str,
+    input: &str,
 ) {
-    let entry = entry
+    let key_entry = entry
         .get_mut(key.to_string())
         .expect("Unable to deserialize game config");
 
     match key {
-        GraphicsSetting::EnableVSync => *entry = Value::Bool(value.parse().unwrap()),
-        GraphicsSetting::RenderScale => *entry = Value::Number(value.parse().unwrap()),
+        GraphicsSetting::EnableVSync => *key_entry = Value::Bool(input.parse().unwrap()),
+        GraphicsSetting::RenderScale => *key_entry = Value::Number(input.parse().unwrap()),
+        GraphicsSetting::Fps => *key_entry = Value::Number(input.parse().unwrap()),
         GraphicsSetting::AAMode => {
-            let v = selector::aa_mode_selector();
-            *entry = Value::Number(Number::from(v[value]))
+            *key_entry = Value::Number(Number::from(selector::aa_mode_selector()[input]))
         }
         _ => {
-            *entry = Value::Number(Number::from(
-                selector::get_num_by_option_name(value).unwrap(),
+            *key_entry = Value::Number(Number::from(
+                selector::get_num_by_option_name(input).unwrap(),
             ))
         }
     }
 
     let mut raw_json = String::into_bytes(
-        serde_json::to_string(&value).expect("Unable to deserialize game config"),
+        serde_json::to_string(&entry).expect("Unable to deserialize game config"),
     );
 
     raw_json.push(0);
